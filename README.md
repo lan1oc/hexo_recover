@@ -38,7 +38,7 @@ pip install -r requirements.txt
 ## 使用方法
 
 1. 准备工作：
-   - 将需要恢复的 HTML 文件放在一个目录中
+   - 将需要恢复的 HTML 文件放在一个目录中，一般直接下静态存储库就行
    - 创建用于存放输出的 Markdown 文件目录
    - 创建用于存放图片资源的目录
 
@@ -46,17 +46,4 @@ pip install -r requirements.txt
 ```bash
 python recover.py
 ```
-
-## 注意事项
-
-1. 确保 HTML 文件使用 UTF-8 编码
-2. 图片资源的路径会被自动处理，支持相对路径和绝对路径
-3. 如果发现同名文件，程序会自动添加数字后缀以避免覆盖
-
-## 许可证
-
-[根据需要添加许可证信息]
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！ 
+![](image/image.png)
