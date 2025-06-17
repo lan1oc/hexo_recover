@@ -126,24 +126,80 @@ def extract_content(soup):
     article_container = soup.find('article', class_='container post-content')
     if not article_container:
         return ""
-    
-    # 初始化html2text转换器
-    converter = html2text.HTML2Text()
-    converter.ignore_images = False
-    converter.ignore_links = False
-    converter.body_width = 0
-    
+
+    # 修正所有 img 标签的 src 路径，去掉多余的前导 /
+    for img in article_container.find_all('img'):
+        src = img.get('src')
+        if src and src.startswith('/') and src[1:3] == '..':
+            img['src'] = src[1:]
+        elif src and src.startswith('//'):
+            while src.startswith('/'):
+                src = src[1:]
+            img['src'] = src
+
+    # 存储代码块信息，用于后续替换
+    code_blocks = []
+    placeholder_counter = 0
+
     # 只提取article内的正文内容，排除其他元素
     content_html = ""
-    
-    # 遍历article内的所有子元素
     for child in article_container.children:
-        if child.name:  # 确保是HTML元素
+        if getattr(child, 'name', None):
+            # 处理高亮代码块
+            if child.name == 'figure' and 'highlight' in child.get('class', []):
+                code_lines = []
+                code_td = child.find('td', class_='code')
+                if code_td:
+                    pre = code_td.find('pre')
+                    if pre:
+                        for span in pre.find_all('span', class_='line'):
+                            code_lines.append(span.get_text())
+                        code_text = '\n'.join(code_lines)
+                    else:
+                        code_text = code_td.get_text('\n')
+                else:
+                    pre = child.find('pre')
+                    if pre:
+                        code_text = pre.get_text('\n')
+                    else:
+                        code_text = child.get_text('\n')
+                lang = ''
+                if 'class' in child.attrs:
+                    for c in child['class']:
+                        if c.startswith('language-'):
+                            lang = c.replace('language-', '')
+                
+                # 创建占位符并存储代码块信息
+                placeholder = f"__CODEBLOCK_{placeholder_counter}__"
+                code_blocks.append({
+                    'placeholder': placeholder,
+                    'lang': lang,
+                    'code': code_text
+                })
+                placeholder_counter += 1
+                content_html += f"<p>{placeholder}</p>"
+                continue
+            # 处理普通 pre 代码块
+            if child.name == 'pre':
+                # 跳过已处理的高亮代码块
+                if child.find_parent('figure', class_='highlight'):
+                    continue
+                code_text = child.get_text('\n')
+                
+                # 创建占位符并存储代码块信息
+                placeholder = f"__CODEBLOCK_{placeholder_counter}__"
+                code_blocks.append({
+                    'placeholder': placeholder,
+                    'lang': '',
+                    'code': code_text
+                })
+                placeholder_counter += 1
+                content_html += f"<p>{placeholder}</p>"
+                continue
             # 只保留正文内容，排除版权信息、标签、分页等
             if child.name not in ['div', 'nav'] or not child.get('class'):
                 content_html += str(child)
             elif child.name == 'div':
-                # 检查是否是版权信息、标签、分页等非正文内容
                 classes = child.get('class', [])
                 if not any(cls in ['post-copyright', 'tag_share', 'pagination-post'] for cls in classes):
                     content_html += str(child)
@@ -155,7 +211,19 @@ def extract_content(soup):
             content_html += str(p)
     
     # 转换为Markdown
+    converter = html2text.HTML2Text()
+    converter.ignore_images = False
+    converter.ignore_links = False
+    converter.body_width = 0
     content_md = converter.handle(content_html)
+    
+    # 替换占位符为正确格式的代码块
+    for block in code_blocks:
+        if block['lang']:
+            code_block = f"```{block['lang']}\n{block['code']}\n```"
+        else:
+            code_block = f"```\n{block['code']}\n```"
+        content_md = content_md.replace(block['placeholder'], code_block)
     
     return content_md.strip()
 
