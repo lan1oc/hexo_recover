@@ -272,10 +272,10 @@ def process_html_file(html_path, posts_output, images_output, html_root):
                 f.write(f"updated: {updated_date.strftime('%Y-%m-%d %H:%M:%S')}\n")
             
             if categories:
-                f.write(f"categorie: {categories[0]}\n")
+                f.write(f"categories: {categories[0]}\n")
             
             if tags:
-                f.write(f"tag: {tags[0]}\n")
+                f.write(f"tags: {tags[0]}\n")
             
             f.write("---\n\n")
             
