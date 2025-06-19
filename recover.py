@@ -341,7 +341,13 @@ def copy_all_images(static_root, images_output):
         print(f"[警告] 未找到图片目录: {src_images}")
 
 def main():
-    """主函数"""
+    print(r"""
+ _                          __                  _   _              _
+| |__   _____  _____    ____\ \   _ __ ___   __| | | |_ ___   ___ | |
+| '_ \ / _ \ \/ / _ \  |_____\ \ | '_ ` _ \ / _` | | __/ _ \ / _ \| |
+| | | |  __/>  < (_) | |_____/ / | | | | | | (_| | | || (_) | (_) | |
+|_| |_|\___/_/\_\___/       /_/  |_| |_| |_|\__,_|  \__\___/ \___/|_|
+""")
     print("=== Hexo文章恢复工具 ===")
     
     # 获取用户输入
@@ -365,22 +371,17 @@ def main():
     total_files = 0
     processed_files = 0
     
-    # 遍历所有年份目录
-    for year in ['2023', '2024', '2025']:
-        year_dir = os.path.join(static_root, year)
-        if not os.path.exists(year_dir):
-            continue
-        
-        print(f"\n处理 {year} 年文章...")
-        
-        # 递归查找所有index.html文件
-        for root, dirs, files in os.walk(year_dir):
-            if 'index.html' in files:
-                total_files += 1
-                html_path = os.path.join(root, 'index.html')
-                
-                if process_html_file(html_path, posts_output, images_output, static_root):
-                    processed_files += 1
+    # 只遍历所有一级年份目录（4位数字）
+    for entry in os.listdir(static_root):
+        year_dir = os.path.join(static_root, entry)
+        if os.path.isdir(year_dir) and re.fullmatch(r'\d{4}', entry):
+            print(f"\n处理 {entry} 年文章...")
+            for root, dirs, files in os.walk(year_dir):
+                if 'index.html' in files:
+                    total_files += 1
+                    html_path = os.path.join(root, 'index.html')
+                    if process_html_file(html_path, posts_output, images_output, static_root):
+                        processed_files += 1
     
     # 输出统计信息
     print(f"\n=== 处理完成 ===")
